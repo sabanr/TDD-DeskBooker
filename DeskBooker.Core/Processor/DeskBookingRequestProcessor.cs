@@ -1,4 +1,6 @@
-﻿namespace DeskBooker.Core.Processor {
+﻿using DeskBooker.Core.Domain;
+
+namespace DeskBooker.Core.Processor {
 	public class DeskBookingRequestProcessor {
 		public DeskBookingRequestProcessor() {
 		}

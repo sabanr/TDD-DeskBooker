@@ -1,7 +1,7 @@
 ﻿using System;
 
-namespace DeskBooker.Core.Processor {
-	public class DeskBookingRequest {
+namespace DeskBooker.Core.Domain {
+	public class DeskBookingResult {
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string Email { get; set; }
