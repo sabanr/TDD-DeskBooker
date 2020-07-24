@@ -7,9 +7,9 @@ using System.Linq;
 namespace DeskBooker.Core.Processor {
 	public class DeskBookingRequestProcessor {
 		private readonly IDeskBookingRepository _deskBookingRepository;
-		private IDeskRepository _deskRepository;
+		private readonly IDeskRepository _deskRepository;
 
-		public DeskBookingRequestProcessor(IDeskBookingRepository deskBookingRepository, IDeskRepository deskRepository) { 
+		public DeskBookingRequestProcessor(IDeskBookingRepository deskBookingRepository, IDeskRepository deskRepository) {
 			_deskBookingRepository = deskBookingRepository;
 			_deskRepository = deskRepository;
 		}
@@ -19,15 +19,24 @@ namespace DeskBooker.Core.Processor {
 				throw new ArgumentNullException(nameof(request));
 			}
 
+			DeskBookingResult result = Create<DeskBookingResult>(request);
 			IEnumerable<Desk> availableDesks = _deskRepository.GetAvailableDesks(request.Date);
 
-			if (availableDesks.Any()) {
-				_deskBookingRepository.Save(Create<DeskBooking>(request));
+			if (availableDesks.FirstOrDefault() is Desk firstAvailableDesk) {
+				DeskBooking deskBooking = Create<DeskBooking>(request);
+				deskBooking.DeskId = firstAvailableDesk.Id;
+
+				_deskBookingRepository.Save(deskBooking);
+				result.DeskBookingId = deskBooking.Id;
+				result.Code = DeskBookingResultCode.Success;
+			} else {
+				result.Code = DeskBookingResultCode.NoDeskAvailable;
 			}
-			return Create<DeskBookingResult>(request);
+
+			return result;
 		}
 
-		private static T Create<T>(DeskBookingRequest request) where T : DeskBookingBase, new() => 
+		private static T Create<T>(DeskBookingRequest request) where T : DeskBookingBase, new() =>
 			new T {
 				FirstName = request.FirstName,
 				LastName = request.LastName,

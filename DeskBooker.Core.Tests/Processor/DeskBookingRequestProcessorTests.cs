@@ -4,18 +4,25 @@ using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace DeskBooker.Core.Processor {
 	public class DeskBookingRequestProcessorTests {
+		
+		#region Fields
 
 		private readonly DeskBookingRequestProcessor _processor;
 		private readonly DeskBookingRequest _request;
 		private readonly Mock<IDeskBookingRepository> _deskBookingRepositoryMock;
 		private readonly Mock<IDeskRepository> _repositoryMock;
 		private readonly List<Desk> _availableDesks = new List<Desk> {
-			new Desk()
+			new Desk { Id = 7 }
 		};
+
+		#endregion
+
+		#region Constructors
 
 		public DeskBookingRequestProcessorTests() {
 			_deskBookingRepositoryMock = new Mock<IDeskBookingRepository>();
@@ -34,8 +41,13 @@ namespace DeskBooker.Core.Processor {
 			_processor = new DeskBookingRequestProcessor(_deskBookingRepositoryMock.Object, _repositoryMock.Object);
 		}
 
+		#endregion
+
+		#region Tests
+
 		[Fact]
-		public void Should_return_deskbooking_result_with_request_values() {
+		public void ShouldReturnDeskBookingResulWithRequestValues() {
+#pragma warning restore IDE1006 // Naming Styles
 			DeskBookingResult result = _processor.BookDesk(_request);
 
 			result.Should().NotBeNull();
@@ -48,7 +60,7 @@ namespace DeskBooker.Core.Processor {
 		}
 
 		[Fact]
-		public void Should_throw_exception_if_request_is_null() {
+		public void ShouldThrowExceptionIfRequestIsNull() {
 			_processor.Invoking(p => p.BookDesk(null))
 				.Should()
 				.Throw<ArgumentNullException>()
@@ -56,7 +68,7 @@ namespace DeskBooker.Core.Processor {
 		}
 
 		[Fact]
-		public void Should_save_deskbooking() {
+		public void ShouldSaveDeskBooking() {
 			DeskBooking savedDeskBooking = null;
 
 			_deskBookingRepositoryMock.Setup(x => x.Save(It.IsAny<DeskBooking>()))
@@ -69,15 +81,48 @@ namespace DeskBooker.Core.Processor {
 			_deskBookingRepositoryMock.Verify(x => x.Save(It.IsAny<DeskBooking>()), Times.Once);
 			savedDeskBooking.Should().NotBeNull();
 			savedDeskBooking.Should().BeEquivalentTo(_request);
+			savedDeskBooking.DeskId.Should().Be(_availableDesks.First().Id);
 		}
 
 		[Fact]
-		public void Should_not_save_deskbooking_if_no_desk_is_available() {
+		public void ShouldNotSaveDeskBookingIfNoDeskIsAvailable() {
 			_availableDesks.Clear();
 
 			_processor.BookDesk(_request);
 
 			_deskBookingRepositoryMock.Verify(x => x.Save(It.IsAny<DeskBooking>()), Times.Never);
 		}
+
+		[Theory]
+		[InlineData(DeskBookingResultCode.Success, true)]
+		[InlineData(DeskBookingResultCode.NoDeskAvailable, false)]
+		public void ShouldReturnExpectedResultCode(DeskBookingResultCode expectedResultCode, bool isDeskAvailable) {
+			if (!isDeskAvailable) {
+				_availableDesks.Clear();
+			}
+
+			DeskBookingResult result = _processor.BookDesk(_request);
+
+			result.Code.Should().Be(expectedResultCode);
+		}
+
+		[Theory]
+		[InlineData(5, true)]
+		[InlineData(null, false)]
+		public void ShouldReturnExpectedDeskBookingId(int? expectedDeskBookingId, bool isDeskAvailable) {
+			if (!isDeskAvailable) {
+				_availableDesks.Clear();
+			} else {
+				_deskBookingRepositoryMock.Setup(x => x.Save(It.IsAny<DeskBooking>()))
+					.Callback<DeskBooking>(deskBooking => {
+						deskBooking.Id = expectedDeskBookingId.Value;
+					});
+			}
+
+			DeskBookingResult result = _processor.BookDesk(_request);
+
+			result.DeskBookingId.Should().Be(expectedDeskBookingId);
+		}
+		#endregion
 	}
 }
