@@ -5,7 +5,13 @@ using Xunit;
 
 namespace DeskBooker.Core.Processor {
 	public class DeskBookingRequestProcessorTests {
-		
+
+		private readonly DeskBookingRequestProcessor _processor;
+
+		public DeskBookingRequestProcessorTests() {
+			_processor = new DeskBookingRequestProcessor();
+		}
+
 		[Fact]
 		public void Should_return_deskbooking_result_with_request_values() {
 
@@ -18,8 +24,7 @@ namespace DeskBooker.Core.Processor {
 			};
 
 			// act
-			var processor = new DeskBookingRequestProcessor();
-			DeskBookingResult result = processor.BookDesk(request);
+			DeskBookingResult result = _processor.BookDesk(request);
 
 			// assert
 			result.Should().NotBeNull();
@@ -28,6 +33,15 @@ namespace DeskBooker.Core.Processor {
 			//Assert.Equal(request.LastName, result.LastName);
 			//Assert.Equal(request.Email, result.Email);
 			//Assert.Equal(request.Date, result.Date);
+
+		}
+
+		[Fact]
+		public void Should_throw_exception_if_request_is_null() {
+			_processor.Invoking(p => p.BookDesk(null))
+				.Should()
+				.Throw<ArgumentNullException>()
+				.And.ParamName.Should().Be("request");
 
 		}
 
