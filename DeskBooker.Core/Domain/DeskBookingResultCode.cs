@@ -1,6 +1,8 @@
-﻿namespace DeskBooker.Core.Domain {
-	public enum DeskBookingResultCode {
-		Success,
-		NoDeskAvailable
-	}
+﻿namespace DeskBooker.Core.Domain
+{
+  public enum DeskBookingResultCode
+  {
+    Success,
+    NoDeskAvailable
+  }
 }
